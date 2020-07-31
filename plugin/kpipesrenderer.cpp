@@ -69,7 +69,7 @@ void KPipesRenderer::setupAttribs() {
                              reinterpret_cast<void *>(2 * 3 * sizeof(float)));
     vertexBuffer.release();
 
-    f->glBindBuffer(indexBuffer.bufferId(), GL_INDEX_ARRAY);
+    f->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer.bufferId());
 }
 
 void KPipesRenderer::initShaders() {
@@ -162,7 +162,7 @@ void KPipesRenderer::render() {
         f->glCullFace(GL_BACK);
 
         // draw
-        f->glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, indices);
+        f->glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, nullptr);
 
         shaderProgram->release();
 
