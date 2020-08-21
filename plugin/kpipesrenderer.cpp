@@ -46,7 +46,7 @@ QString KPipesRenderer::loadText(const QString &name) {
     return stream.readAll();
 }
 
-void KPipesRenderer::loadObj(const QString &name, QOpenGLBuffer &vertexBuffer, QOpenGLBuffer &indexBuffer) {
+void KPipesRenderer::loadObj(const QString &name, Buffer<Vertex> &vertexBuf, Buffer<GLushort> &indexBuf) {
     QString meshString = loadText(name);
     tinyobj::ObjReaderConfig config;
     config.vertex_color = false;
@@ -108,15 +108,8 @@ void KPipesRenderer::loadObj(const QString &name, QOpenGLBuffer &vertexBuffer, Q
         }
     }
 
-    if (!vertexBuffer.isCreated())
-        vertexBuffer.create();
-    vertexBuffer.bind();
-    vertexBuffer.allocate(vertices.data(), (int) (vertices.size() * sizeof(Vertex)));
-
-    if (!indexBuffer.isCreated())
-        indexBuffer.create();
-    indexBuffer.bind();
-    indexBuffer.allocate(indices.data(), (int) (indices.size() * sizeof(GLushort)));
+    vertexBuf.allocate(vertices);
+    indexBuf.allocate(indices);
 }
 
 void KPipesRenderer::ensureInit() {
@@ -149,7 +142,7 @@ void KPipesRenderer::setupAttribs() {
                              reinterpret_cast<void *>(3 * sizeof(float)));
     vertexBuffer.release();
 
-    f->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer.bufferId());
+    indexBuffer.bind();
 }
 
 void KPipesRenderer::initShaders() {
@@ -241,7 +234,7 @@ void KPipesRenderer::render() {
         f->glCullFace(GL_BACK);
 
         // draw
-        f->glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, nullptr);
+        f->glDrawElements(GL_TRIANGLES, indexBuffer.size(), GL_UNSIGNED_SHORT, nullptr);
 
         shaderProgram->release();
 

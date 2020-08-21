@@ -11,7 +11,8 @@ set(kpipeskdeplugin_SRCS
         kpipesview.cpp
         kpipesrenderer.cpp
         tiny_obj_loader.cc
-        vertex.cpp)
+        vertex.cpp
+        )
 
 add_library(kpipeskdeplugin SHARED ${kpipeskdeplugin_SRCS})
 
