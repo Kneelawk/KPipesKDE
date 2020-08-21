@@ -6,10 +6,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 # NOTE: You must run a build clean every time a resource included in the resources.s file is updated.
 # Otherwise, your build system won't know to rebuild resources.s.
 set(kpipeskdeplugin_SRCS
+        kpipeskde.qrc
         kpipeskdeplugin.cpp
         kpipesview.cpp
         kpipesrenderer.cpp
-        resources.s
         )
 
 add_library(kpipeskdeplugin SHARED ${kpipeskdeplugin_SRCS})

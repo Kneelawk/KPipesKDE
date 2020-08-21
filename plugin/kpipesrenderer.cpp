@@ -16,12 +16,9 @@
 
 #define OpenGLFunctions QOpenGLContext::currentContext()->functions()
 
-extern char kpipes_resource_shader_frag_glsl_start;
-extern int kpipes_resource_shader_frag_glsl_size;
-extern char kpipes_resource_shader_vert_glsl_start;
-extern int kpipes_resource_shader_vert_glsl_size;
-
 KPipesRenderer::KPipesRenderer(const KPipesView *view) : view(view) {
+    Q_INIT_RESOURCE(kpipeskde);
+
     viewMatrix.setToIdentity();
     viewMatrix.lookAt(QVector3D(0.0f, 4.0f, 4.0f), QVector3D(0.0f, 0.0f, 0.0f), QVector3D(0.0f, 1.0f, 0.0f));
     projectionMatrix.setToIdentity();
@@ -72,14 +69,26 @@ void KPipesRenderer::setupAttribs() {
     f->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer.bufferId());
 }
 
+QString loadText(const QString &name) {
+    QFile file(name);
+
+    if (!file.open(QFile::ReadOnly | QFile::Text)) {
+        qWarning() << "Failed to read file:" << name;
+        return "Failed to read file!";
+    }
+
+    QTextStream stream(&file);
+
+    return stream.readAll();
+}
+
 void KPipesRenderer::initShaders() {
+    QString vertText = loadText(":/shader.vert.glsl");
+    QString fragText = loadText(":/shader.frag.glsl");
+
     shaderProgram.reset(new QOpenGLShaderProgram);
-    shaderProgram->addCacheableShaderFromSourceCode(QOpenGLShader::Vertex,
-                                                    QString(QLatin1String(&kpipes_resource_shader_vert_glsl_start,
-                                                                          kpipes_resource_shader_vert_glsl_size)));
-    shaderProgram->addCacheableShaderFromSourceCode(QOpenGLShader::Fragment,
-                                                    QString(QLatin1String(&kpipes_resource_shader_frag_glsl_start,
-                                                                          kpipes_resource_shader_frag_glsl_size)));
+    shaderProgram->addCacheableShaderFromSourceCode(QOpenGLShader::Vertex, vertText);
+    shaderProgram->addCacheableShaderFromSourceCode(QOpenGLShader::Fragment, fragText);
     shaderProgram->bindAttributeLocation("a_position", 0);
     shaderProgram->bindAttributeLocation("a_normal", 1);
     shaderProgram->bindAttributeLocation("a_color", 2);
