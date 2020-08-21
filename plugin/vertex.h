@@ -1,16 +1,19 @@
-//
-// Created by jedidiah on 7/31/20.
-//
+/*
+    SPDX-FileCopyrightText: 2020 Kneelawk <kneelawk@gmail.com>
+    SPDX-License-Identifier: MIT
+*/
 
 #ifndef PLASMA_KPIPESKDE_VERTEX_H
 #define PLASMA_KPIPESKDE_VERTEX_H
 
 #include <QVector3D>
 
-typedef struct Vertex {
+class Vertex {
+public:
     QVector3D position;
     QVector3D normal;
-    QVector3D color;
-} Vertex;
+
+    bool operator==(Vertex other) const;
+};
 
 #endif //PLASMA_KPIPESKDE_VERTEX_H

@@ -29,13 +29,19 @@ private:
     bool initialized = false;
     bool initError = false;
 
+    QString loadText(const QString &name);
+
+    void loadObj(const QString &name, QOpenGLBuffer &vertexBuffer, QOpenGLBuffer &indexBuffer);
+
     void ensureInit();
 
     void init();
 
-    void initShaders();
+    void setupBuffers();
 
     void setupAttribs();
+
+    void initShaders();
 
     // delta calculations
     std::chrono::milliseconds previousTime{};

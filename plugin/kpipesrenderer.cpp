@@ -5,11 +5,13 @@
 
 #include "kpipesrenderer.h"
 
-#include "cube.h"
 #include "kpipesview.h"
+#include "tiny_obj_loader.h"
+#include "vertex.h"
 
-#include <iostream>
+#include <algorithm>
 #include <cmath>
+#include <iostream>
 
 #include <QOpenGLFunctions>
 #include <QtQuick/QQuickWindow>
@@ -30,6 +32,93 @@ KPipesRenderer::KPipesRenderer(const KPipesView *view) : view(view) {
             std::chrono::system_clock::now().time_since_epoch());
 }
 
+QString KPipesRenderer::loadText(const QString &name) {
+    QFile file(name);
+
+    if (!file.open(QFile::ReadOnly | QFile::Text)) {
+        initError = true;
+        qWarning() << "Failed to read file:" << name;
+        return "Failed to read file!";
+    }
+
+    QTextStream stream(&file);
+
+    return stream.readAll();
+}
+
+void KPipesRenderer::loadObj(const QString &name, QOpenGLBuffer &vertexBuffer, QOpenGLBuffer &indexBuffer) {
+    QString meshString = loadText(name);
+    tinyobj::ObjReaderConfig config;
+    config.vertex_color = false;
+    tinyobj::ObjReader reader;
+    reader.ParseFromString(meshString.toStdString(), "", config);
+
+    if (!reader.Warning().empty()) {
+        qWarning() << "Warning loading obj:" << name;
+        qWarning() << reader.Warning().c_str();
+    }
+
+    if (!reader.Error().empty()) {
+        qWarning() << "Error loading obj:" << name;
+        qWarning() << reader.Error().c_str();
+    }
+
+    if (!reader.Valid()) {
+        initError = true;
+        return;
+    }
+
+    std::vector<tinyobj::shape_t> shapes = reader.GetShapes();
+    tinyobj::attrib_t attrib = reader.GetAttrib();
+
+    if (shapes.empty()) {
+        qWarning() << "No shapes loaded in obj:" << name;
+        initError = true;
+        return;
+    }
+
+    if (shapes.size() > 1) {
+        qWarning() << "More than one shape in the obj file:" << name << "Only loading the first shape.";
+    }
+
+    std::vector<Vertex> vertices;
+    std::vector<GLushort> indices;
+
+    for (tinyobj::index_t meshIndex : shapes[0].mesh.indices) {
+        tinyobj::real_t posX = attrib.vertices[meshIndex.vertex_index * 3];
+        tinyobj::real_t posY = attrib.vertices[meshIndex.vertex_index * 3 + 1];
+        tinyobj::real_t posZ = attrib.vertices[meshIndex.vertex_index * 3 + 2];
+        tinyobj::real_t norX = attrib.normals[meshIndex.normal_index * 3];
+        tinyobj::real_t norY = attrib.normals[meshIndex.normal_index * 3 + 1];
+        tinyobj::real_t norZ = attrib.normals[meshIndex.normal_index * 3 + 2];
+
+        Vertex vertex = {
+                QVector3D(posX, posY, posZ),
+                QVector3D(norX, norY, norZ)
+        };
+
+        auto it = std::find(vertices.begin(), vertices.end(), vertex);
+        if (it == vertices.end()) {
+            auto index = (GLushort) vertices.size();
+            vertices.push_back(vertex);
+            indices.push_back(index);
+        } else {
+            GLushort index = std::distance(vertices.begin(), it);
+            indices.push_back(index);
+        }
+    }
+
+    if (!vertexBuffer.isCreated())
+        vertexBuffer.create();
+    vertexBuffer.bind();
+    vertexBuffer.allocate(vertices.data(), (int) (vertices.size() * sizeof(Vertex)));
+
+    if (!indexBuffer.isCreated())
+        indexBuffer.create();
+    indexBuffer.bind();
+    indexBuffer.allocate(indices.data(), (int) (indices.size() * sizeof(GLushort)));
+}
+
 void KPipesRenderer::ensureInit() {
     if (!initialized) {
         init();
@@ -41,15 +130,12 @@ void KPipesRenderer::ensureInit() {
 void KPipesRenderer::init() {
     QOpenGLVertexArrayObject::Binder binder(&vao);
 
-    vertexBuffer.create();
-    vertexBuffer.bind();
-    vertexBuffer.allocate(vertices, sizeof(vertices));
-
-    indexBuffer.create();
-    indexBuffer.bind();
-    indexBuffer.allocate(indices, sizeof(indices));
-
+    setupBuffers();
     setupAttribs();
+}
+
+void KPipesRenderer::setupBuffers() {
+    loadObj(":/kpipe-straight.obj", vertexBuffer, indexBuffer);
 }
 
 void KPipesRenderer::setupAttribs() {
@@ -58,28 +144,12 @@ void KPipesRenderer::setupAttribs() {
     vertexBuffer.bind();
     f->glEnableVertexAttribArray(0);
     f->glEnableVertexAttribArray(1);
-    f->glEnableVertexAttribArray(2);
-    f->glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * 3 * sizeof(float), nullptr);
-    f->glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * 3 * sizeof(float),
+    f->glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * 2 * sizeof(float), nullptr);
+    f->glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * 2 * sizeof(float),
                              reinterpret_cast<void *>(3 * sizeof(float)));
-    f->glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * 3 * sizeof(float),
-                             reinterpret_cast<void *>(2 * 3 * sizeof(float)));
     vertexBuffer.release();
 
     f->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer.bufferId());
-}
-
-QString loadText(const QString &name) {
-    QFile file(name);
-
-    if (!file.open(QFile::ReadOnly | QFile::Text)) {
-        qWarning() << "Failed to read file:" << name;
-        return "Failed to read file!";
-    }
-
-    QTextStream stream(&file);
-
-    return stream.readAll();
 }
 
 void KPipesRenderer::initShaders() {
