@@ -64,7 +64,7 @@ private:
     float light1Strength = 0.6f;
     QVector3D light2Direction = QVector3D(1.0f, 2.0f, 3.0f);
     float light2Strength = 0.3f;
-    float ambientLight = 0.2f;
+    float ambientLight = 0.3f;
     bool lit = false;
 
     void ensureLighting();

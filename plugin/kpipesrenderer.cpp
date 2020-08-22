@@ -137,22 +137,22 @@ void KPipesRenderer::init() {
 }
 
 void KPipesRenderer::setupBuffers() {
-    loadObj(":/kpipe-straight.obj", vertexBuffer, indexBuffer);
+    loadObj(":/kpipe-single.obj", vertexBuffer, indexBuffer);
 
     instanceBuffer.allocate(3);
     QMatrix4x4 mat;
     instanceBuffer.append(Instance{
-            QVector3D(0.0, 0.3, 0.4),
+            QVector3D(0.0, 0.6, 0.8),
             QMatrix4x4(mat)
     });
     mat.translate(0.0, 1.0, 0.0);
     instanceBuffer.append(Instance{
-            QVector3D(0.4, 0.0, 0.3),
+            QVector3D(0.8, 0.0, 0.6),
             QMatrix4x4(mat)
     });
     mat.translate(0.0, 1.0, 0.0);
     instanceBuffer.append(Instance{
-        QVector3D(0.3, 0.4, 0.0),
+        QVector3D(0.6, 0.8, 0.0),
         QMatrix4x4(mat)
     });
 }
