@@ -3,13 +3,13 @@
     SPDX-License-Identifier: MIT
 */
 
-#ifndef PLASMA_KPIPESKDE_BUFFER_H
-#define PLASMA_KPIPESKDE_BUFFER_H
+#ifndef PLASMA_KPIPESKDE_BUFFERWRAPPER_H
+#define PLASMA_KPIPESKDE_BUFFERWRAPPER_H
 
 #include <QOpenGLBuffer>
 
 template<typename T>
-class Buffer {
+class BufferWrapper {
 private:
     QOpenGLBuffer _buffer;
     int _capacity;
@@ -26,9 +26,9 @@ public:
         InsufficientSize
     };
 
-    explicit Buffer(QOpenGLBuffer::Type type) : _buffer(type), _capacity(0), _size(0) {}
+    explicit BufferWrapper(QOpenGLBuffer::Type type) : _buffer(type), _capacity(0), _size(0) {}
 
-    Buffer(int capacity, QOpenGLBuffer::Type type) : _buffer(type), _capacity(capacity), _size(0) {
+    BufferWrapper(int capacity, QOpenGLBuffer::Type type) : _buffer(type), _capacity(capacity), _size(0) {
         if (!_buffer.isCreated())
             _buffer.create();
 
@@ -37,8 +37,8 @@ public:
         _buffer.release();
     }
 
-    Buffer(std::vector<T> data, QOpenGLBuffer::Type type) : _buffer(type), _capacity(data.size()),
-                                                            _size(data.size()) {
+    BufferWrapper(std::vector<T> data, QOpenGLBuffer::Type type) : _buffer(type), _capacity(data.size()),
+                                                                   _size(data.size()) {
         if (!_buffer.isCreated())
             _buffer.create();
 
@@ -119,4 +119,4 @@ public:
     }
 };
 
-#endif //PLASMA_KPIPESKDE_BUFFER_H
+#endif //PLASMA_KPIPESKDE_BUFFERWRAPPER_H

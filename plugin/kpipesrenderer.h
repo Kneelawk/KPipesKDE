@@ -6,7 +6,7 @@
 #ifndef PLASMA_KPIPESKDE_KPIPESRENDERER_H
 #define PLASMA_KPIPESKDE_KPIPESRENDERER_H
 
-#include "buffer.h"
+#include "bufferwrapper.h"
 #include "instance.h"
 #include "vertex.h"
 
@@ -35,7 +35,7 @@ private:
 
     QString loadText(const QString &name);
 
-    void loadObj(const QString &name, Buffer<Vertex> &vertexBuf, Buffer<GLushort> &indexBuf);
+    void loadObj(const QString &name, BufferWrapper<Vertex> &vertexBuf, BufferWrapper<GLushort> &indexBuf);
 
     void ensureInit();
 
@@ -71,9 +71,9 @@ private:
 
     // vertex stuff
     QOpenGLVertexArrayObject vao;
-    Buffer<Instance> instanceBuffer = Buffer<Instance>(QOpenGLBuffer::VertexBuffer);
-    Buffer<Vertex> vertexBuffer = Buffer<Vertex>(QOpenGLBuffer::VertexBuffer);
-    Buffer<GLushort> indexBuffer = Buffer<GLushort>(QOpenGLBuffer::IndexBuffer);
+    BufferWrapper<Instance> instanceBuffer = BufferWrapper<Instance>(QOpenGLBuffer::VertexBuffer);
+    BufferWrapper<Vertex> vertexBuffer = BufferWrapper<Vertex>(QOpenGLBuffer::VertexBuffer);
+    BufferWrapper<GLushort> indexBuffer = BufferWrapper<GLushort>(QOpenGLBuffer::IndexBuffer);
 
     // shaders
     QScopedPointer<QOpenGLShaderProgram> shaderProgram;

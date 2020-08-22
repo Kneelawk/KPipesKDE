@@ -49,7 +49,7 @@ QString KPipesRenderer::loadText(const QString &name) {
     return stream.readAll();
 }
 
-void KPipesRenderer::loadObj(const QString &name, Buffer<Vertex> &vertexBuf, Buffer<GLushort> &indexBuf) {
+void KPipesRenderer::loadObj(const QString &name, BufferWrapper<Vertex> &vertexBuf, BufferWrapper<GLushort> &indexBuf) {
     QString meshString = loadText(name);
     tinyobj::ObjReaderConfig config;
     config.vertex_color = false;
