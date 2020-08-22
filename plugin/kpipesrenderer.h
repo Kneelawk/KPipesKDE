@@ -7,6 +7,7 @@
 #define PLASMA_KPIPESKDE_KPIPESRENDERER_H
 
 #include "buffer.h"
+#include "instance.h"
 #include "vertex.h"
 
 #include <chrono>
@@ -70,6 +71,7 @@ private:
 
     // vertex stuff
     QOpenGLVertexArrayObject vao;
+    Buffer<Instance> instanceBuffer = Buffer<Instance>(QOpenGLBuffer::VertexBuffer);
     Buffer<Vertex> vertexBuffer = Buffer<Vertex>(QOpenGLBuffer::VertexBuffer);
     Buffer<GLushort> indexBuffer = Buffer<GLushort>(QOpenGLBuffer::IndexBuffer);
 

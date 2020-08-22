@@ -11,12 +11,15 @@
 
 #include <algorithm>
 #include <cmath>
-#include <iostream>
+#include <vector>
 
+#include <QOpenGLExtraFunctions>
 #include <QOpenGLFunctions>
 #include <QtQuick/QQuickWindow>
 
 #define OpenGLFunctions QOpenGLContext::currentContext()->functions()
+#define OpenGLExtraFunctions QOpenGLContext::currentContext()->extraFunctions()
+#define attribOffset(offset) reinterpret_cast<void *>((offset) * sizeof(float))
 
 KPipesRenderer::KPipesRenderer(const KPipesView *view) : view(view) {
     Q_INIT_RESOURCE(kpipeskde);
@@ -121,6 +124,12 @@ void KPipesRenderer::ensureInit() {
 }
 
 void KPipesRenderer::init() {
+    auto *f = OpenGLFunctions;
+    qDebug() << "OpenGL Version:" << QLatin1String(reinterpret_cast<const char *>(f->glGetString(GL_VENDOR)))
+             << QLatin1String(reinterpret_cast<const char *>(f->glGetString(GL_RENDERER)))
+             << QLatin1String(reinterpret_cast<const char *>(f->glGetString(GL_VERSION)));
+    qDebug() << "Is OpenGL ES:" << QOpenGLContext::currentContext()->isOpenGLES();
+
     QOpenGLVertexArrayObject::Binder binder(&vao);
 
     setupBuffers();
@@ -129,17 +138,52 @@ void KPipesRenderer::init() {
 
 void KPipesRenderer::setupBuffers() {
     loadObj(":/kpipe-straight.obj", vertexBuffer, indexBuffer);
+
+    instanceBuffer.allocate(3);
+    QMatrix4x4 mat;
+    instanceBuffer.append(Instance{
+            QVector3D(0.0, 0.3, 0.4),
+            QMatrix4x4(mat)
+    });
+    mat.translate(0.0, 1.0, 0.0);
+    instanceBuffer.append(Instance{
+            QVector3D(0.4, 0.0, 0.3),
+            QMatrix4x4(mat)
+    });
+    mat.translate(0.0, 1.0, 0.0);
+    instanceBuffer.append(Instance{
+        QVector3D(0.3, 0.4, 0.0),
+        QMatrix4x4(mat)
+    });
 }
 
 void KPipesRenderer::setupAttribs() {
     auto *f = OpenGLFunctions;
+    auto *g = OpenGLExtraFunctions;
 
-    vertexBuffer.bind();
     f->glEnableVertexAttribArray(0);
     f->glEnableVertexAttribArray(1);
-    f->glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * 2 * sizeof(float), nullptr);
-    f->glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * 2 * sizeof(float),
-                             reinterpret_cast<void *>(3 * sizeof(float)));
+    f->glEnableVertexAttribArray(2);
+    f->glEnableVertexAttribArray(3);
+    f->glEnableVertexAttribArray(4);
+    instanceBuffer.bind();
+    f->glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Instance), nullptr);
+    f->glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Instance), attribOffset(3));
+    f->glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(Instance), attribOffset(3 + 4));
+    f->glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(Instance), attribOffset(3 + 2 * 4));
+    f->glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(Instance), attribOffset(3 + 3 * 4));
+    instanceBuffer.release();
+    g->glVertexAttribDivisor(0, 1);
+    g->glVertexAttribDivisor(1, 1);
+    g->glVertexAttribDivisor(2, 1);
+    g->glVertexAttribDivisor(3, 1);
+    g->glVertexAttribDivisor(4, 1);
+
+    f->glEnableVertexAttribArray(5);
+    f->glEnableVertexAttribArray(6);
+    vertexBuffer.bind();
+    f->glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), nullptr);
+    f->glVertexAttribPointer(6, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), attribOffset(3));
     vertexBuffer.release();
 
     indexBuffer.bind();
@@ -152,9 +196,10 @@ void KPipesRenderer::initShaders() {
     shaderProgram.reset(new QOpenGLShaderProgram);
     shaderProgram->addCacheableShaderFromSourceCode(QOpenGLShader::Vertex, vertText);
     shaderProgram->addCacheableShaderFromSourceCode(QOpenGLShader::Fragment, fragText);
-    shaderProgram->bindAttributeLocation("a_position", 0);
-    shaderProgram->bindAttributeLocation("a_normal", 1);
-    shaderProgram->bindAttributeLocation("a_color", 2);
+    shaderProgram->bindAttributeLocation("s_color", 0);
+    shaderProgram->bindAttributeLocation("s_model", 1);
+    shaderProgram->bindAttributeLocation("a_position", 5);
+    shaderProgram->bindAttributeLocation("a_normal", 6);
     shaderProgram->link();
     vpfMatrixUniform = shaderProgram->uniformLocation("u_vpf_matrix");
     light1DirectionUniform = shaderProgram->uniformLocation("u_light1_direction");
@@ -197,6 +242,7 @@ void KPipesRenderer::render() {
 
     // get functions
     auto *f = OpenGLFunctions;
+    auto *g = OpenGLExtraFunctions;
 
     // clear
     if (initError) {
@@ -234,7 +280,7 @@ void KPipesRenderer::render() {
         f->glCullFace(GL_BACK);
 
         // draw
-        f->glDrawElements(GL_TRIANGLES, indexBuffer.size(), GL_UNSIGNED_SHORT, nullptr);
+        g->glDrawElementsInstanced(GL_TRIANGLES, indexBuffer.size(), GL_UNSIGNED_SHORT, nullptr, instanceBuffer.size());
 
         shaderProgram->release();
 

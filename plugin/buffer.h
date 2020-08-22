@@ -33,17 +33,17 @@ public:
             _buffer.create();
 
         _buffer.bind();
-        _buffer.allocate(capacity);
+        _buffer.allocate(capacity * sizeof(T));
         _buffer.release();
     }
 
-    Buffer(std::vector<T> data, QOpenGLBuffer::Type type) : _buffer(type), _capacity((int) (data.size() * sizeof(T))),
-                                                            _size((int) (data.size() * sizeof(T))) {
+    Buffer(std::vector<T> data, QOpenGLBuffer::Type type) : _buffer(type), _capacity(data.size()),
+                                                            _size(data.size()) {
         if (!_buffer.isCreated())
             _buffer.create();
 
         _buffer.bind();
-        _buffer.allocate(data.data(), _size);
+        _buffer.allocate(data.data(), _capacity * sizeof(T));
         _buffer.release();
     }
 
@@ -55,7 +55,7 @@ public:
         _size = 0;
 
         _buffer.bind();
-        _buffer.allocate(capacity);
+        _buffer.allocate(capacity * sizeof(T));
         _buffer.release();
     }
 
@@ -63,11 +63,11 @@ public:
         if (!_buffer.isCreated())
             _buffer.create();
 
-        _capacity = (int) (data.size() * sizeof(T));
-        _size = _capacity;
+        _capacity = data.size();
+        _size = data.size();
 
         _buffer.bind();
-        _buffer.allocate(data.data(), _capacity);
+        _buffer.allocate(data.data(), _capacity * sizeof(T));
         _buffer.release();
     }
 
@@ -109,7 +109,9 @@ public:
             return InsufficientCapacity;
         }
 
-        _buffer.write(sizeBytes(), &data, 1);
+        _buffer.bind();
+        _buffer.write(sizeBytes(), &data, sizeof(T));
+        _buffer.release();
 
         _size++;
 
